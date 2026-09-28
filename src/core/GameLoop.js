@@ -16,6 +16,7 @@ export class GameLoop {
     this._paused = false;
     this._lastTime = 0;
     this._rafId = null;
+    this._usesAnimationFrame = false;
   }
 
   start() {
@@ -23,12 +24,14 @@ export class GameLoop {
     this._running = true;
     this._paused = false;
     this._lastTime = 0;
+    this._usesAnimationFrame = true;
     this._rafId = requestAnimationFrame((t) => this._tick(t));
   }
 
   stop() {
     this._running = false;
     this._paused = false;
+    this._usesAnimationFrame = false;
     if (this._rafId !== null) {
       cancelAnimationFrame(this._rafId);
       this._rafId = null;
@@ -40,9 +43,10 @@ export class GameLoop {
   }
 
   resume() {
-    if (!this._running) return;
     this._paused = false;
-    this._lastTime = 0;
+    if (this._running) {
+      this._lastTime = 0;
+    }
   }
 
   isRunning() {
@@ -79,7 +83,7 @@ export class GameLoop {
       this._render();
     }
 
-    if (this._running) {
+    if (this._running && this._usesAnimationFrame) {
       this._rafId = requestAnimationFrame((t) => this._tick(t));
     }
   }

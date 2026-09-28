@@ -370,3 +370,32 @@ Manually reviewed — acceptable (`tạm ổn`). Further real-world UX validatio
 ```
 npm test → 92/92 pass
 ```
+
+---
+
+## Handoff #009 — Background-Tab / Visibility Protection
+
+| Field | Value |
+|---|---|
+| Date | 2026-09-28 |
+| Task | Fix background-tab score / simulation exploit |
+
+### IMPLEMENTED
+
+- Page Visibility API (`document.visibilityState`, `visibilitychange`) in `Game.js`
+- `PLAYING` + hidden document → `GameLoop.pause()`; score, physics, spawn, patterns, `_runElapsedSec` frozen
+- Visible again → `GameLoop.resume()` with `_lastTime` rebase; no catch-up simulation
+- Leaving `PLAYING` clears visibility pause for overlay states
+- Focus loss alone does not pause; no pause screen; MENU / GAME_OVER unaffected
+
+### SECURITY SCOPE
+
+Fixes the specific background-tab/inactive-tab simulation exploit only. **Not** complete anti-cheat — no protection against DevTools, modified JS, localStorage edits, or online leaderboard tampering.
+
+### TESTED
+
+```
+npm test → 103/103 pass
+```
+
+New suites: `GameLoop.test.js`, `GameVisibility.test.js`

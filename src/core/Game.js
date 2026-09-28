@@ -34,7 +34,15 @@ import {
 import { clamp } from '../utils/math.js';
 
 export class Game {
-  constructor(canvas, { tapHintElement = null, debugTelemetry = false, themeId = null } = {}) {
+  constructor(
+    canvas,
+    {
+      tapHintElement = null,
+      debugTelemetry = false,
+      themeId = null,
+      getVisibilityState = null,
+    } = {}
+  ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.stateMachine = new GameStateMachine();
@@ -67,9 +75,15 @@ export class Game {
       update: (dt) => this._update(dt),
       render: () => this._render(),
     });
+    this._pausedByVisibility = false;
+    this._getVisibilityState =
+      getVisibilityState ??
+      (() =>
+        typeof document !== 'undefined' ? document.visibilityState : 'visible');
 
     this._setupInput();
     this._setupStateListeners();
+    this._setupVisibilityHandling();
   }
 
   init() {
@@ -85,8 +99,51 @@ export class Game {
   }
 
   destroy() {
+    this._teardownVisibilityHandling();
     this._loop.stop();
     this.inputManager.unbind();
+  }
+
+  _isDocumentHidden() {
+    return this._getVisibilityState() === 'hidden';
+  }
+
+  _applyVisibilityToGameplayLoop() {
+    if (this.stateMachine.getState() !== GameState.PLAYING) {
+      return;
+    }
+
+    if (this._isDocumentHidden()) {
+      this._loop.pause();
+      this._pausedByVisibility = true;
+      return;
+    }
+
+    if (this._pausedByVisibility) {
+      this._loop.resume();
+      this._pausedByVisibility = false;
+      return;
+    }
+
+    this._loop.resume();
+  }
+
+  _setupVisibilityHandling() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    this._onVisibilityChange = () => this._applyVisibilityToGameplayLoop();
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
+  }
+
+  _teardownVisibilityHandling() {
+    if (typeof document === 'undefined' || !this._onVisibilityChange) {
+      return;
+    }
+
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
+    this._onVisibilityChange = null;
   }
 
   getSpeed() {
@@ -111,9 +168,16 @@ export class Game {
   }
 
   _setupStateListeners() {
-    this.stateMachine.onStateChange((to) => {
+    this.stateMachine.onStateChange((to, from) => {
       if (to === GameState.PLAYING) {
-        this._loop.resume();
+        this._applyVisibilityToGameplayLoop();
+      }
+
+      if (from === GameState.PLAYING && to !== GameState.PLAYING) {
+        this._pausedByVisibility = false;
+        if (this._loop.isPaused()) {
+          this._loop.resume();
+        }
       }
       if (to === GameState.GAME_OVER) {
         this.retention.markFirstRunComplete();

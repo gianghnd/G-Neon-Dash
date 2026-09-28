@@ -48,7 +48,7 @@ Automated tests verify correctness of logic. Human playtests verify fun, feel, a
 
 ## Current Test Coverage
 
-**Total: 92 tests / 16 suites** (last verified 2026-09-28)
+**Total: 103 tests / 18 suites** (last verified 2026-09-28)
 
 | Module | Focus | Status |
 |---|---|---|
@@ -57,12 +57,19 @@ Automated tests verify correctness of logic. Human playtests verify fun, feel, a
 | CollisionSystem | AABB overlap | ✅ |
 | InputManager | Jump callbacks | ✅ |
 | Game | V1 gameplay integration | ✅ |
+| GameLoop | Pause/resume, delta rebase on resume | ✅ |
+| GameVisibility | Background-tab freeze via visibility API | ✅ |
 | SpawnSystem | Spawn lifecycle | ✅ |
 | Player | Jump physics | ✅ |
 | Playability | Jump/obstacle clearance | ✅ |
 | RetentionSystem | localStorage persistence | ✅ |
 | PatternFairness | Fairness math, P1–P10, director | ✅ |
 | HazardSkins | Rect dimensions, wide-skin gate | ✅ |
+
+### Background-Tab Regression Tests
+
+- `tests/GameLoop.test.js` — pause skips update; resume rebases timestamp (no hidden-time delta)
+- `tests/GameVisibility.test.js` — PLAYING simulation frozen when hidden; elapsed/score unchanged; resume continues from frozen state; MENU/GAME_OVER unaffected
 
 ## Running Tests
 

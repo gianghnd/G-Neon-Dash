@@ -49,9 +49,9 @@ src/analytics/      # Event tracking (future)
 
 | Module | Responsibility |
 |---|---|
-| `Game.js` | Orchestrates systems, owns game lifecycle |
+| `Game.js` | Orchestrates systems, owns game lifecycle; Page Visibility integration |
 | `GameState.js` | State machine with valid transitions |
-| `GameLoop.js` | RequestAnimationFrame loop with update/render |
+| `GameLoop.js` | RequestAnimationFrame loop with update/render; `pause()` / `resume()` |
 
 ### config/
 
@@ -103,6 +103,26 @@ InputManager → Game → Systems → Entities
                   ↓
               UIManager (overlay)
 ```
+
+## GameLoop and Background Visibility
+
+`GameLoop` separates **simulation** (`update`) from **render** (`render`):
+
+| Method | Behavior |
+|---|---|
+| `start()` | Begins RAF cycle; sets `_usesAnimationFrame = true` |
+| `pause()` | Skips `update`; render continues |
+| `resume()` | Clears pause; rebases `_lastTime = 0` when running to avoid a huge post-resume delta |
+| `tick()` | Manual tick for tests; does not chain RAF unless started via `start()` |
+
+`Game.js` listens for `document.visibilitychange`. While state is `PLAYING` and the document is hidden:
+
+1. Calls `GameLoop.pause()` — score, physics, spawn, patterns, and `_runElapsedSec` freeze
+2. On visible again, calls `resume()` — simulation continues; hidden time is not simulated
+
+Focus loss alone does **not** pause gameplay. `MENU` and `GAME_OVER` are unaffected. No pause screen is shown.
+
+This protects against the background-tab score exploit only — not client-side tampering or server-side anti-cheat.
 
 ## Entry Point
 

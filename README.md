@@ -40,7 +40,7 @@ neon-dash/
 │   ├── input/             # InputManager
 │   ├── ui/                # UIManager, TapHint
 │   └── main.js
-├── tests/                 # 92 automated tests
+├── tests/                 # 103 automated tests
 ├── scripts/               # dev-server, validate
 ├── index.html
 └── package.json
@@ -62,7 +62,7 @@ Query params:
 ## How to Test
 
 ```bash
-npm test      # 92 tests
+npm test      # 103 tests
 npm run build # project validation
 ```
 

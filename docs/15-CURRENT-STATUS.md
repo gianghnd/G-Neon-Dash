@@ -16,6 +16,7 @@
 | Pattern System V2 | ✅ IMPLEMENTED (flag OFF) | REQUIRES HUMAN PLAYTEST |
 | Content V1 | ✅ IMPLEMENTED | REQUIRES HUMAN PLAYTEST |
 | Game Over UX V1 | ✅ IMPLEMENTED | Manually reviewed — acceptable; further validation possible |
+| Background-tab / visibility protection | ✅ FIXED | Automated + partial browser review |
 
 ## Implementation Summary
 
@@ -30,8 +31,32 @@
 | Pattern System (`src/patterns/`, `src/utils/fairness.js`) | ✅ Complete — `patternSystemV2` default OFF |
 | Content V1 (runners, hazard skins, themes, P1–P10) | ✅ Complete |
 | Game Over UX V1 | ✅ Complete |
-| Unit / integration tests | ✅ **92/92 pass** (`npm test`) |
+| Background-tab / visibility protection | ✅ Complete |
+| Unit / integration tests | ✅ **103/103 pass** (`npm test`) |
 | Dev server with port fallback | ✅ Complete |
+
+## Background-Tab / Visibility Protection (Fixed)
+
+When `document.visibilityState === 'hidden'` during `PLAYING`:
+
+- `GameLoop` pauses gameplay simulation (`pause()`)
+- Score and best score do **not** increase
+- Player physics do **not** advance
+- Obstacles do **not** spawn or move
+- Pattern timing do **not** advance
+- Difficulty Director elapsed gameplay time (`_runElapsedSec`) do **not** advance
+
+When the document becomes visible again:
+
+- Gameplay resumes from the frozen state
+- `GameLoop.resume()` rebases `_lastTime` — hidden duration is **not** simulated
+- No catch-up score, spawn, pattern, or difficulty progression
+
+**Implementation:** Page Visibility API (`document.visibilityState`, `visibilitychange`) integrated with existing `GameLoop` pause/resume in `Game.js`.
+
+**Scope:** Prevents gameplay simulation from continuing while the game is backgrounded/hidden. **Not** a complete anti-cheat system — does not protect against DevTools manipulation, modified JavaScript, localStorage editing, memory tampering, or future online leaderboard exploits.
+
+**UX:** No pause screen. Focus loss alone does **not** pause gameplay. `MENU` and `GAME_OVER` are unaffected.
 
 ## Content V1 (Implemented)
 
