@@ -17,6 +17,7 @@
 | Content V1 | ✅ IMPLEMENTED | REQUIRES HUMAN PLAYTEST |
 | Game Over UX V1 | ✅ IMPLEMENTED | Manually reviewed — acceptable; further validation possible |
 | Background-tab / visibility protection | ✅ FIXED | Automated + partial browser review |
+| Audio V2 | ✅ IMPLEMENTED | Automated + browser smoke test — no console errors |
 
 ## Implementation Summary
 
@@ -32,7 +33,8 @@
 | Content V1 (runners, hazard skins, themes, P1–P10) | ✅ Complete |
 | Game Over UX V1 | ✅ Complete |
 | Background-tab / visibility protection | ✅ Complete |
-| Unit / integration tests | ✅ **103/103 pass** (`npm test`) |
+| Audio V2 (real MP3 assets + procedural fallback) | ✅ Complete — `audioV1` default ON |
+| Unit / integration tests | ✅ **116/116 pass** (`npm test`) |
 | Dev server with port fallback | ✅ Complete |
 
 ## Background-Tab / Visibility Protection (Fixed)
@@ -57,6 +59,40 @@ When the document becomes visible again:
 **Scope:** Prevents gameplay simulation from continuing while the game is backgrounded/hidden. **Not** a complete anti-cheat system — does not protect against DevTools manipulation, modified JavaScript, localStorage editing, memory tampering, or future online leaderboard exploits.
 
 **UX:** No pause screen. Focus loss alone does **not** pause gameplay. `MENU` and `GAME_OVER` are unaffected.
+
+## Audio V2 (Complete)
+
+**Implementation commit:** `9737a5e59640b1c34e7dd0bae07cc0c7b297bc12` (`feat: integrate audio v2 assets`)
+
+Real generated MP3 assets are integrated via `src/audio/AudioSystem.js` and `src/audio/audioAssetCatalog.js`. Gameplay triggers semantic events only; paths are resolved in the catalog.
+
+### Integrated asset paths (6 MP3s)
+
+| Event | Path |
+|---|---|
+| `play` | `assets/audio/play/play.mp3` |
+| `jump` | `assets/audio/jump/jump_a.mp3` |
+| `land` | `assets/audio/land/land_a.mp3` |
+| `hit` | `assets/audio/hit/hit.mp3` |
+| `ui_confirm` | `assets/audio/ui_confirm/ui_confirm.mp3` |
+| `new_best` | `assets/audio/new_best/new_best.mp3` |
+
+### Behavior
+
+- **Asset playback:** `AudioSystem` preloads and decodes MP3s into Web Audio buffer nodes when available.
+- **Procedural fallback:** Missing or broken assets (e.g. alternate `jump_b` / `land_b` not yet supplied) fall back to `src/audio/proceduralAudio.js` without throwing.
+- **First-tap race fix:** `play()` awaits in-flight asset load via `_playAsync()` / `_ensureAssetBuffer()` before falling back, so the first menu tap uses the real MP3 when preload is still running.
+- **Feature flag:** `FEATURE_FLAGS.audioV1` (default ON) gates all SFX wiring in `Game.js`.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Automated tests | **116/116 pass** (`npm test`) |
+| Browser smoke test | PASS — all 6 MP3s load and play as buffer nodes |
+| Console errors | None observed during smoke test |
+
+See also `assets/audio/README.md` for the full 12-file asset catalog (including reserved events not yet implemented in gameplay).
 
 ## Content V1 (Implemented)
 
@@ -100,7 +136,6 @@ Retry: Space / click / tap anywhere → `PLAYING` (skips Start Screen); preserve
 | Feedback Priority V2 | NOT IMPLEMENTED |
 | Shield | NOT IMPLEMENTED |
 | Analytics / Monetization | NOT IMPLEMENTED |
-| Audio | NOT IMPLEMENTED |
 | Shop / progression / leaderboards | NOT IMPLEMENTED |
 
 ## Requires Human Playtest (Not PASS)
