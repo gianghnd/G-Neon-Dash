@@ -1,0 +1,17 @@
+{
+  "name": "neon-dash",
+  "version": "0.1.0",
+  "description": "HTML5 casual endless runner by ASOL Game Factory",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "build": "node scripts/validate-project.js",
+    "validate": "node scripts/validate-project.js",
+    "dev": "node scripts/dev-server.js"
+  },
+  "keywords": ["game", "html5", "endless-runner"],
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
