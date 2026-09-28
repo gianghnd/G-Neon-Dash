@@ -19,6 +19,7 @@ import { UIManager } from '../ui/UIManager.js';
 import { TapHint } from '../ui/TapHint.js';
 import { RetentionSystem } from '../systems/RetentionSystem.js';
 import { RunnerSkinStore } from '../systems/RunnerSkinStore.js';
+import { AudioSystem } from '../audio/AudioSystem.js';
 import {
   GAME_CONFIG,
   PLAYER_CONFIG,
@@ -62,8 +63,10 @@ export class Game {
       GAME_CONFIG.canvasWidth,
       GAME_CONFIG.canvasHeight
     );
+    this.audioSystem = new AudioSystem();
 
     this._debugTelemetry = debugTelemetry;
+    this._prevPlayerGrounded = true;
     this._speed = GAME_CONFIG.initialSpeed;
     this._runElapsedSec = 0;
     this._runDurationFrames = 0;
@@ -161,6 +164,9 @@ export class Game {
     }
     this.runnerSkinStore.cycle(direction);
     this.player.setRunnerSkin(this.runnerSkinStore.getSkin());
+    if (FEATURE_FLAGS.audioV1) {
+      this.audioSystem.play('ui_confirm');
+    }
   }
 
   setTheme(themeId) {
@@ -181,7 +187,11 @@ export class Game {
       }
       if (to === GameState.GAME_OVER) {
         this.retention.markFirstRunComplete();
-        this.uiManager.notifyGameOver(this.scoreSystem.isNewBest());
+        const isNewBest = this.scoreSystem.isNewBest();
+        this.uiManager.notifyGameOver(isNewBest);
+        if (FEATURE_FLAGS.audioV1 && isNewBest) {
+          this.audioSystem.play('new_best');
+        }
         this._logDebugTelemetry();
       }
       this._syncTapHint();
@@ -198,6 +208,7 @@ export class Game {
   }
 
   _handleJump(pointerEvent = null) {
+    this.audioSystem.unlock();
     const state = this.stateMachine.getState();
 
     if (state === GameState.MENU) {
@@ -213,17 +224,27 @@ export class Game {
           return;
         }
       }
+      if (FEATURE_FLAGS.audioV1) {
+        this.audioSystem.play('play');
+      }
       this._startRun();
       return;
     }
 
     if (state === GameState.GAME_OVER) {
+      if (FEATURE_FLAGS.audioV1) {
+        this.audioSystem.play('play');
+      }
       this._retryRun();
       return;
     }
 
     if (state === GameState.PLAYING) {
-      this.player.jump();
+      if (this.player.jump()) {
+        if (FEATURE_FLAGS.audioV1) {
+          this.audioSystem.play('jump');
+        }
+      }
       this.retention.markFirstRunComplete();
       this._syncTapHint();
     }
@@ -252,6 +273,7 @@ export class Game {
     this._deathVisualFramesLeft = 0;
     this.uiManager.resetScorePulse();
     this.uiManager.resetGameOverPresentation();
+    this._prevPlayerGrounded = true;
   }
 
   _logDebugTelemetry() {
@@ -312,6 +334,13 @@ export class Game {
       }
 
       this.player.update(deltaTime);
+      if (this.player.grounded && !this._prevPlayerGrounded) {
+        if (FEATURE_FLAGS.audioV1) {
+          this.audioSystem.play('land');
+        }
+      }
+      this._prevPlayerGrounded = this.player.grounded;
+
       this.spawnSystem.setSpeed(this._speed);
       this.spawnSystem.update(deltaTime, GAME_CONFIG.canvasWidth);
       this.scoreSystem.update(deltaTime, this._speed);
@@ -322,6 +351,9 @@ export class Game {
       );
 
       if (hit) {
+        if (FEATURE_FLAGS.audioV1) {
+          this.audioSystem.play('hit');
+        }
         this.scoreSystem.finalizeRun();
         if (this.scoreSystem.isNewBest()) {
           this.retention.persistBestIfNeeded(this.scoreSystem.getBest());

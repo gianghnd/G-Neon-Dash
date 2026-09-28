@@ -316,6 +316,45 @@ export const VISUAL_CONFIG = {
   },
 };
 
+export const AUDIO_CONFIG = {
+  jump: {
+    frequency: 480,
+    duration: 0.07,
+    type: 'sine',
+    volume: 0.25,
+  },
+  land: {
+    frequency: 140,
+    duration: 0.05,
+    type: 'sine',
+    volume: 0.2,
+  },
+  hit: {
+    frequency: 90,
+    duration: 0.28,
+    type: 'sawtooth',
+    volume: 0.45,
+  },
+  play: {
+    frequency: 440,
+    duration: 0.1,
+    type: 'sine',
+    volume: 0.3,
+  },
+  ui_confirm: {
+    frequency: 620,
+    duration: 0.04,
+    type: 'sine',
+    volume: 0.22,
+  },
+  new_best: {
+    frequency: 880,
+    duration: 0.18,
+    type: 'sine',
+    volume: 0.35,
+  },
+};
+
 export const FEATURE_FLAGS = {
   difficultyDirectorV2: false,
   patternSystemV2: false,
@@ -325,4 +364,5 @@ export const FEATURE_FLAGS = {
   personalBestV2: false,
   analyticsV1: false,
   monetizationV1: false,
+  audioV1: true,
 };
