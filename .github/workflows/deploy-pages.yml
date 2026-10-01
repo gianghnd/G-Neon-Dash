@@ -7,9 +7,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
-  administration: write
 
 concurrency:
   group: pages
@@ -28,25 +25,6 @@ jobs:
           cp index.html styles.css _site/
           cp -r src assets _site/
           touch _site/.nojekyll
-
-      - name: Enable GitHub Pages (gh-pages branch)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set +e
-          gh api "repos/${GITHUB_REPOSITORY}/pages" \
-            --method POST \
-            -f build_type=legacy \
-            -f "source[branch]=gh-pages" \
-            -f "source[path]=/"
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            gh api "repos/${GITHUB_REPOSITORY}/pages" \
-              --method PUT \
-              -f build_type=legacy \
-              -f "source[branch]=gh-pages" \
-              -f "source[path]=/"
-          fi
 
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
